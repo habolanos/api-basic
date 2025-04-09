@@ -141,3 +141,6 @@ api-basic/
 ### Notas
 - **Swagger UI**: El Dockerfile descarga Swagger UI y modifica `index.html` para que apunte a `/swagger.yaml` por defecto.
 - **Prueba**: Después de construir y ejecutar el contenedor (`docker build -t api-basic:latest && docker run -d -p 8080:8080 api-basic:latest`), visita `http://localhost:8080/swagger` para ver la interfaz.
+
+---
+By habolanos
