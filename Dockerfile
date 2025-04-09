@@ -20,7 +20,7 @@ RUN git clone https://github.com/gabime/spdlog.git && \
 # Instalar Crow
 RUN git clone https://github.com/CrowCpp/Crow.git && \
     mkdir -p /usr/local/include/crow && \
-    cp Crow/include/* /usr/local/include/crow/
+    cp -r Crow/include/crow/* /usr/local/include/crow/
 
 # Descargar Swagger UI
 RUN git clone https://github.com/swagger-api/swagger-ui.git && \
