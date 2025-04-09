@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     make \
     git \
     boost-dev \
-    openssl-dev
+    openssl-dev \
+    asio-dev
 
 WORKDIR /app
 
