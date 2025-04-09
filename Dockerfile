@@ -11,16 +11,16 @@ RUN apk update && apk add --no-cache \
     zlib-dev \
     brotli-dev
 
-# Clonar y construir cpprestsdk
+# Clonar y construir cpprestsdk sin pruebas
 RUN git clone --branch v2.10.19 https://github.com/microsoft/cpprestsdk.git /cpprestsdk && \
     mkdir /cpprestsdk/build && cd /cpprestsdk/build && \
-    cmake -DCPPREST_EXCLUDE_WEBSOCKETS=ON -DCMAKE_BUILD_TYPE=Release .. && \
+    cmake -DCPPREST_EXCLUDE_WEBSOCKETS=ON -DCPPREST_SKIP_TESTS=ON -DCMAKE_BUILD_TYPE=Release .. && \
     make -j$(nproc) && make install
 
-# Clonar y construir spdlog
+# Clonar y construir spdlog sin pruebas
 RUN git clone https://github.com/gabime/spdlog.git /spdlog && \
     mkdir /spdlog/build && cd /spdlog/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    cmake -DSPDLOG_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release .. && \
     make -j$(nproc) && make install
 
 # Copiar archivos de la aplicación
