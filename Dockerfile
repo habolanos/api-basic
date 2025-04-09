@@ -28,8 +28,8 @@ WORKDIR /app
 COPY main.cpp .
 COPY swagger.json .
 
-# Construir la aplicación
-RUN g++ -std=c++17 -o api-basic main.cpp -lcpprest -lssl -lcrypto -lboost_system -lz -lbrotlienc -lbrotlidec -lspdlog -lpthread
+# Construir la aplicación con supresión de warnings
+RUN g++ -std=c++17 -o api-basic main.cpp -lcpprest -lssl -lcrypto -lboost_system -lz -lbrotlienc -lbrotlidec -lspdlog -lpthread -Wno-deprecated-declarations
 
 # Etapa final
 FROM alpine:3.18
