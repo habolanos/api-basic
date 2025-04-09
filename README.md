@@ -3,6 +3,8 @@
 
 API escrita en C++ con Crow para realizar operaciones matemáticas básicas (suma y resta) y un healthcheck. Incluye logging con spdlog, está contenerizada con Docker usando Alpine como base y sirve su propia documentación Swagger.
 
+[![release-buildx](https://github.com/habolanos/api-basic/actions/workflows/release-buildx.yml/badge.svg)](https://github.com/habolanos/api-basic/actions/workflows/release-buildx.yml)
+
 ## Requisitos
 - Docker
 - Kubernetes (opcional, para despliegue en cluster)
