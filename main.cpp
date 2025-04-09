@@ -28,7 +28,7 @@ std::string load_swagger_file() {
 }
 
 void handle_add(http_request request) {
-    auto path = request.relative_uri().split_path();
+    auto path = uri::split_path(request.relative_uri().path());
     if (path.size() != 3 || path[0] != "add") {
         request.reply(status_codes::BadRequest, "Invalid path. Use /add/num1/num2");
         return;
@@ -50,7 +50,7 @@ void handle_add(http_request request) {
 }
 
 void handle_subtract(http_request request) {
-    auto path = request.relative_uri().split_path();
+    auto path = uri::split_path(request.relative_uri().path());
     if (path.size() != 3 || path[0] != "subtract") {
         request.reply(status_codes::BadRequest, "Invalid path. Use /subtract/num1/num2");
         return;
