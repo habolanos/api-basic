@@ -1,4 +1,3 @@
-```markdown
 # API-Basic
 
 API escrita en C++ con Crow para realizar operaciones matemáticas básicas (suma y resta) y un healthcheck. Incluye logging con spdlog, está contenerizada con Docker usando Alpine como base y sirve su propia documentación Swagger.
