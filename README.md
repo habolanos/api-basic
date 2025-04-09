@@ -1,147 +1,100 @@
 # API-Basic
 
-API escrita en C++ con Crow para realizar operaciones matemáticas básicas (suma y resta) y un healthcheck. Incluye logging con spdlog, está contenerizada con Docker usando Alpine como base y sirve su propia documentación Swagger.
+A simple C++ REST API built with `cpprestsdk` for performing addition and subtraction operations, with health check and Swagger documentation.
 
-[![release-buildx](https://github.com/habolanos/api-basic/actions/workflows/release-buildx.yml/badge.svg)](https://github.com/habolanos/api-basic/actions/workflows/release-buildx.yml)
+## Features
+- **Endpoints**:
+  - `GET /add/{num1}/{num2}`: Adds two numbers.
+  - `GET /subtract/{num1}/{num2}`: Subtracts two numbers.
+  - `GET /health`: Returns health status.
+  - `GET /`: Serves Swagger JSON.
+- Logging with `spdlog` to `/var/log/api-basic.log`.
+- Containerized with Docker (Alpine base).
 
-## Requisitos
+## Prerequisites
 - Docker
-- Kubernetes (opcional, para despliegue en cluster)
-- Git
+- Docker Compose (optional)
+- Kubernetes (optional)
 
-## Construcción y Ejecución con Docker
+## Build and Run with Docker
 
-1. Clona el repositorio:
+1. **Build the Docker image**:
    ```bash
-   git clone <URL_DEL_REPOSITORIO>
-   cd api-basic
+   docker build -t api-basic .
    ```
 
-2. Construye la imagen Docker:
+2. **Run the container**:
+   ```bash
+   docker run -d -p 8080:8080 -v $(pwd)/logs:/var/log api-basic
+   ```
+
+3. **Access the API**:
+   - Swagger: `http://localhost:8080/`
+   - Addition: `http://localhost:8080/add/5/3`
+   - Subtraction: `http://localhost:8080/subtract/5/3`
+   - Health: `http://localhost:8080/health`
+
+## Run with Docker Compose
+
+1. **Start the service**:
+   ```bash
+   docker-compose up --build
+   ```
+
+2. **Stop the service**:
+   ```bash
+   docker-compose down
+   ```
+
+## Deploy to Kubernetes
+
+1. **Build and tag the image**:
    ```bash
    docker build -t api-basic:latest .
    ```
 
-3. Ejecuta el contenedor:
+2. **Push to a registry (optional)**:
+   Replace `your-registry` with your container registry:
    ```bash
-   docker run -d -p 8080:8080 --name api-basic api-basic:latest
+   docker tag api-basic:latest your-registry/api-basic:latest
+   docker push your-registry/api-basic:latest
    ```
 
-4. Prueba la API:
-   - Suma: `curl http://localhost:8080/add/2/3`
-   - Resta: `curl http://localhost:8080/subtract/5/2`
-   - Healthcheck: `curl http://localhost:8080/healthcheck`
-
-5. Verifica los logs:
-   Los logs se generan en el directorio `/app/logs/api.log` dentro del contenedor.
-
-## Despliegue en Kubernetes
-
-1. Crea un manifiesto Kubernetes (`k8s-deployment.yaml`):
-   ```yaml
-   apiVersion: apps/v1
-   kind: Deployment
-   metadata:
-     name: api-basic-deployment
-   spec:
-     replicas: 3
-     selector:
-       matchLabels:
-         app: api-basic
-     template:
-       metadata:
-         labels:
-           app: api-basic
-       spec:
-         containers:
-         - name: api-basic
-           image: api-basic:latest
-           ports:
-           - containerPort: 8080
-           volumeMounts:
-           - mountPath: /app/logs
-             name: log-volume
-         volumes:
-         - name: log-volume
-           emptyDir: {}
-   ---
-   apiVersion: v1
-   kind: Service
-   metadata:
-     name: api-basic-service
-   spec:
-     selector:
-       app: api-basic
-     ports:
-     - protocol: TCP
-       port: 80
-       targetPort: 8080
-     type: LoadBalancer
-   ```
-
-2. Aplica el manifiesto:
+3. **Apply the manifest**:
+   Update the `image` field in `k8s-deployment.yml` if using a custom registry.
    ```bash
-   kubectl apply -f k8s-deployment.yaml
+   kubectl apply -f k8s-deployment.yml
    ```
 
-3. Verifica el despliegue:
+4. **Access the service**:
    ```bash
-   kubectl get pods
-   kubectl get svc
+   kubectl get svc api-basic-service
    ```
-
-4. Accede a la API usando la IP externa del servicio (`LoadBalancer`).
-
-## Documentación de la API con Swagger
-
-La documentación Swagger está integrada en la API y se sirve directamente desde el endpoint `/swagger`. Sigue estos pasos para acceder:
-
-1. **Ejecuta la API**:
-   - Asegúrate de que el contenedor esté corriendo (ver sección "Construcción y Ejecución con Docker").
-
-2. **Accede a Swagger UI**:
-   - Abre tu navegador en `http://localhost:8080/swagger`.
-   - Esto cargará la interfaz de Swagger UI con la documentación de la API.
-
-3. **Obtén el archivo Swagger crudo (opcional)**:
-   - Visita `http://localhost:8080/swagger.yaml` para descargar el archivo YAML directamente.
-
-4. **Prueba un Endpoint**:
-   - En la interfaz de Swagger UI, selecciona `/add/{num1}/{num2}`.
-   - Ingresa `2` y `3` como parámetros y haz clic en "Try it out".
-   - Respuesta esperada: `Resultado de la suma: 5`.
-
-### Notas
-- El archivo `swagger.yaml` y los archivos estáticos de Swagger UI están empaquetados en el contenedor Docker.
-- Asegúrate de que el puerto 8080 esté accesible.
-
-## Endpoints
-- `GET /add/{num1}/{num2}`: Suma dos números.
-- `GET /subtract/{num1}/{num2}`: Resta dos números.
-- `GET /healthcheck`: Verifica el estado de la API.
-- `GET /swagger`: Interfaz Swagger UI.
-- `GET /swagger.yaml`: Archivo Swagger en formato YAML.
+   Use the external IP to access the API.
 
 ## Logging
-Los logs se generan con spdlog y se almacenan en `/app/logs/api.log` dentro del contenedor.
+Logs are written to `/var/log/api-basic.log` inside the container. Mount a volume to persist logs locally (e.g., `./logs:/var/log`).
 
-#### Organización de Archivos
-```
-api-basic/
-├── main.cpp           # Código fuente de la API
-├── Dockerfile         # Configuración para Docker
-├── swagger.yaml       # Documentación Swagger
-├── static/            # Archivos de Swagger UI (descargados en el Dockerfile)
-│   └── index.html     # Página principal de Swagger UI (modificada)
-├── logs/              # Directorio para logs (creado en runtime)
-└── README.md          # Instrucciones del proyecto
-```
+## Dependencies
+- `cpprestsdk`: REST API framework.
+- `spdlog`: Logging library.
+- Alpine Linux: Lightweight base image.
+
+## Notes
+- The API runs on port `8080`.
+- Swagger JSON is served at the root (`/`), but you'll need a Swagger UI client to visualize it (e.g., paste into `https://editor.swagger.io/`).
 
 ---
 
-### Notas
-- **Swagger UI**: El Dockerfile descarga Swagger UI y modifica `index.html` para que apunte a `/swagger.yaml` por defecto.
-- **Prueba**: Después de construir y ejecutar el contenedor (`docker build -t api-basic:latest && docker run -d -p 8080:8080 api-basic:latest`), visita `http://localhost:8080/swagger` para ver la interfaz.
+### **8. Pasos Finales**
 
----
-By habolanos
+1. **Probar localmente**:
+   - Coloca todos los archivos en una carpeta `api-basic`.
+   - Ejecuta `docker build -t api-basic .` y luego `docker run -d -p 8080:8080 -v $(pwd)/logs:/var/log api-basic`.
+   - Usa `curl` o un navegador para probar los endpoints.
+
+2. **Validar Swagger**:
+   - Visita `http://localhost:8080/` para obtener el JSON y pégalo en `https://editor.swagger.io/` para visualizarlo.
+
+3. **Ver logs**:
+   - Revisa `./logs/api-basic.log` después de ejecutar el contenedor.
