@@ -39,7 +39,8 @@ int main() {
     // Ruta para Swagger UI
     CROW_ROUTE(app, "/swagger")([]() {
         spdlog::info("Swagger UI solicitado");
-        return crow::response(crow::mustache::load("static/index.html"));
+        auto page = crow::mustache::load("static/index.html");
+        return crow::response(page.render()); // Renderizar la plantilla a string
     });
 
     app.port(8080).multithreaded().run();
