@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: math-api-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: math-api
+  template:
+    metadata:
+      labels:
+        app: math-api
+    spec:
+      containers:
+      - name: math-api
+        image: math-api:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /app/logs
+          name: log-volume
+      volumes:
+      - name: log-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: math-api-service
+spec:
+  selector:
+    app: math-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer

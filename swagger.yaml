@@ -1,0 +1,68 @@
+openapi: 3.0.0
+info:
+  title: Simple Math API
+  description: API para operaciones matemáticas básicas
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Servidor local
+paths:
+  /add/{num1}/{num2}:
+    get:
+      summary: Suma dos números
+      parameters:
+        - in: path
+          name: num1
+          schema:
+            type: integer
+          required: true
+          description: Primer número
+        - in: path
+          name: num2
+          schema:
+            type: integer
+          required: true
+          description: Segundo número
+      responses:
+        '200':
+          description: Resultado de la suma
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Resultado de la suma: 5"
+  /subtract/{num1}/{num2}:
+    get:
+      summary: Resta dos números
+      parameters:
+        - in: path
+          name: num1
+          schema:
+            type: integer
+          required: true
+          description: Primer número
+        - in: path
+          name: num2
+          schema:
+            type: integer
+          required: true
+          description: Segundo número
+      responses:
+        '200':
+          description: Resultado de la resta
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Resultado de la resta: 3"
+  /healthcheck:
+    get:
+      summary: Verifica el estado de la API
+      responses:
+        '200':
+          description: Estado de la API
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Estado: OK"
