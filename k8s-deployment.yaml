@@ -1,25 +1,50 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: math-api-deployment
+  name: api-basic
+  labels:
+    app: api-basic
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
-      app: math-api
+      app: api-basic
   template:
     metadata:
       labels:
-        app: math-api
+        app: api-basic
     spec:
       containers:
-      - name: math-api
-        image: math-api:latest
+      - name: api-basic
+        image: habolanos/api-basic:latest
         ports:
         - containerPort: 8080
         volumeMounts:
-        - mountPath: /app/logs
-          name: log-volume
+        - name: log-volume
+          mountPath: /var/log
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "128Mi"
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
       volumes:
       - name: log-volume
         emptyDir: {}
@@ -27,12 +52,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: math-api-service
+  name: api-basic-service
 spec:
   selector:
-    app: math-api
+    app: api-basic
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
   type: LoadBalancer

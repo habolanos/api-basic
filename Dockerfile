@@ -1,39 +1,48 @@
-FROM alpine:3.19
+# Etapa de construcción
+FROM python:3.11-slim AS build
 
-RUN apk add --no-cache \
-    g++ \
-    cmake \
-    make \
-    git \
-    boost-dev \
-    openssl-dev \
-    asio-dev
+# Instalar dependencias necesarias para construir
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
+# Establecer directorio de trabajo
 WORKDIR /app
 
-COPY . /app
+# Copiar archivo de la aplicación
+COPY main.py .
 
-# Instalar spdlog
-RUN git clone https://github.com/gabime/spdlog.git && \
-    cd spdlog && mkdir build && cd build && \
-    cmake .. && make -j && make install
+# Instalar dependencias en un entorno virtual
+RUN python -m venv /venv && \
+    /venv/bin/pip install --no-cache-dir fastapi uvicorn
 
-# Instalar Crow
-RUN git clone https://github.com/CrowCpp/Crow.git && \
-    mkdir -p /usr/local/include && \
-    cp -r Crow/include/* /usr/local/include/
+# Etapa final
+FROM python:3.11-slim
 
-# Descargar Swagger UI
-RUN git clone https://github.com/swagger-api/swagger-ui.git && \
-    mkdir -p /app/static && \
-    cp swagger-ui/dist/* /app/static/ && \
-    sed -i 's|https://petstore.swagger.io/v2/swagger.json|/swagger.yaml|' /app/static/index.html
+# Instalar solo las dependencias de runtime y curl para el healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Compilar la aplicación
-RUN g++ -o api-basic main.cpp -I/usr/local/include -lspdlog -lpthread -O2
+# Copiar el entorno virtual desde la etapa de construcción
+COPY --from=build /venv /venv
+COPY --from=build /app/main.py /app/main.py
 
+# Crear directorio para logs y ajustar permisos
+RUN mkdir -p /var/log && chmod -R 777 /var/log
+
+# Establecer directorio de trabajo
+WORKDIR /app
+
+# Usar el entorno virtual
+ENV PATH="/venv/bin:$PATH"
+
+# Exponer puerto
 EXPOSE 8080
 
-RUN mkdir -p /app/logs
+# Healthcheck usando el endpoint /health
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
 
-CMD ["./api-basic"]
+# Comando para ejecutar la API
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,147 +1,197 @@
-# API-Basic
+# API Basic (Python)
 
-API escrita en C++ con Crow para realizar operaciones matemáticas básicas (suma y resta) y un healthcheck. Incluye logging con spdlog, está contenerizada con Docker usando Alpine como base y sirve su propia documentación Swagger.
+A lightweight REST API built with FastAPI for addition and subtraction operations, with health check and integrated Swagger UI.
 
-[![release-buildx](https://github.com/habolanos/api-basic/actions/workflows/release-buildx.yml/badge.svg)](https://github.com/habolanos/api-basic/actions/workflows/release-buildx.yml)
+### **Manifiesto de Kubernetes**
+El manifiesto ya está configurado para exponer la API en el puerto 8080, donde Swagger UI está disponible. No requiere ajustes:
 
-## Requisitos
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-basic
+  labels:
+    app: api-basic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-basic
+  template:
+    metadata:
+      labels:
+        app: api-basic
+    spec:
+      containers:
+      - name: api-basic
+        image: api-basic:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: log-volume
+          mountPath: /var/log
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "128Mi"
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: log-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-basic-service
+spec:
+  selector:
+    app: api-basic
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+```
+
+---
+
+## Features
+- **Endpoints**:
+  - `GET /add/{num1}/{num2}`: Adds two numbers.
+  - `GET /subtract/{num1}/{num2}`: Subtracts two numbers.
+  - `GET /health`: Returns health status.
+- **Swagger UI**: Interactive API documentation at `http://localhost:8080/docs`.
+- Logging to `/var/log/api-basic.log`.
+- Containerized with Docker (Python Slim base).
+- Healthchecks for Docker and Kubernetes.
+
+## Prerequisites
 - Docker
-- Kubernetes (opcional, para despliegue en cluster)
-- Git
+- Kubernetes (optional)
 
-## Construcción y Ejecución con Docker
+## Build ம
 
-1. Clona el repositorio:
+Build and Run with Docker
+
+1. **Build the Docker image**:
    ```bash
-   git clone <URL_DEL_REPOSITORIO>
-   cd api-basic
+   docker build -t api-basic .
    ```
 
-2. Construye la imagen Docker:
+2. **Run the container**:
+   ```bash
+   docker run -d -p 8080:8080 -v $(pwd)/logs:/var/log api-basic
+   ```
+
+3. **Check health status**:
+   ```bash
+   docker ps  # Verifica que el estado sea "healthy"
+   ```
+
+4. **Access the API**:
+   - Swagger UI: `http://localhost:8080/docs`
+   - Addition: `http://localhost:8080/add/5/3`
+   - Subtraction: `http://localhost:8080/subtract/5/3`
+   - Health: `http://localhost:8080/health`
+
+## Deploy to Kubernetes
+
+1. **Build and tag the image**:
    ```bash
    docker build -t api-basic:latest .
    ```
 
-3. Ejecuta el contenedor:
+2. **Push to a registry (optional)**:
+   Replace `your-registry` with your container registry:
    ```bash
-   docker run -d -p 8080:8080 --name api-basic api-basic:latest
+   docker tag api-basic:latest your-registry/api-basic:latest
+   docker push your-registry/api-basic:latest
    ```
 
-4. Prueba la API:
-   - Suma: `curl http://localhost:8080/add/2/3`
-   - Resta: `curl http://localhost:8080/subtract/5/2`
-   - Healthcheck: `curl http://localhost:8080/healthcheck`
-
-5. Verifica los logs:
-   Los logs se generan en el directorio `/app/logs/api.log` dentro del contenedor.
-
-## Despliegue en Kubernetes
-
-1. Crea un manifiesto Kubernetes (`k8s-deployment.yaml`):
-   ```yaml
-   apiVersion: apps/v1
-   kind: Deployment
-   metadata:
-     name: api-basic-deployment
-   spec:
-     replicas: 3
-     selector:
-       matchLabels:
-         app: api-basic
-     template:
-       metadata:
-         labels:
-           app: api-basic
-       spec:
-         containers:
-         - name: api-basic
-           image: api-basic:latest
-           ports:
-           - containerPort: 8080
-           volumeMounts:
-           - mountPath: /app/logs
-             name: log-volume
-         volumes:
-         - name: log-volume
-           emptyDir: {}
-   ---
-   apiVersion: v1
-   kind: Service
-   metadata:
-     name: api-basic-service
-   spec:
-     selector:
-       app: api-basic
-     ports:
-     - protocol: TCP
-       port: 80
-       targetPort: 8080
-     type: LoadBalancer
-   ```
-
-2. Aplica el manifiesto:
+3. **Apply the manifest**:
+   Update the `image` field in `k8s-deployment.yml` if using a custom registry.
    ```bash
-   kubectl apply -f k8s-deployment.yaml
+   kubectl apply -f k8s-deployment.yml
    ```
 
-3. Verifica el despliegue:
+4. **Check pod status**:
    ```bash
-   kubectl get pods
-   kubectl get svc
+   kubectl get pods  # Verifica que el pod esté "Running" y "Ready"
    ```
 
-4. Accede a la API usando la IP externa del servicio (`LoadBalancer`).
+5. **Access the service**:
+   ```bash
+   kubectl get svc api-basic-service
+   ```
+   Use the external IP to access the API.
 
-## Documentación de la API con Swagger
-
-La documentación Swagger está integrada en la API y se sirve directamente desde el endpoint `/swagger`. Sigue estos pasos para acceder:
-
-1. **Ejecuta la API**:
-   - Asegúrate de que el contenedor esté corriendo (ver sección "Construcción y Ejecución con Docker").
-
-2. **Accede a Swagger UI**:
-   - Abre tu navegador en `http://localhost:8080/swagger`.
-   - Esto cargará la interfaz de Swagger UI con la documentación de la API.
-
-3. **Obtén el archivo Swagger crudo (opcional)**:
-   - Visita `http://localhost:8080/swagger.yaml` para descargar el archivo YAML directamente.
-
-4. **Prueba un Endpoint**:
-   - En la interfaz de Swagger UI, selecciona `/add/{num1}/{num2}`.
-   - Ingresa `2` y `3` como parámetros y haz clic en "Try it out".
-   - Respuesta esperada: `Resultado de la suma: 5`.
-
-### Notas
-- El archivo `swagger.yaml` y los archivos estáticos de Swagger UI están empaquetados en el contenedor Docker.
-- Asegúrate de que el puerto 8080 esté accesible.
-
-## Endpoints
-- `GET /add/{num1}/{num2}`: Suma dos números.
-- `GET /subtract/{num1}/{num2}`: Resta dos números.
-- `GET /healthcheck`: Verifica el estado de la API.
-- `GET /swagger`: Interfaz Swagger UI.
-- `GET /swagger.yaml`: Archivo Swagger en formato YAML.
+## Swagger UI
+- Access the interactive Swagger UI at `http://localhost:8080/docs` (or the external IP in Kubernetes).
+- Test endpoints directly from the UI by clicking "Try it out" and entering values.
 
 ## Logging
-Los logs se generan con spdlog y se almacenan en `/app/logs/api.log` dentro del contenedor.
+Logs are written to `/var/log/api-basic.log` inside the container. Mount a volume to persist logs locally (e.g., `./logs:/var/log`).
 
-#### Organización de Archivos
+## Healthchecks
+- **Docker**: Uses `HEALTHCHECK` to verify `/health` every 30 seconds.
+- **Kubernetes**: Includes `livenessProbe` (restarts if unhealthy) and `readinessProbe` (controls traffic) on `/health`.
+
+## Dependencies
+- `fastapi`: Lightweight REST framework with OpenAPI support.
+- `uvicorn`: ASGI server to run the API.
+- Python 3.11 Slim: Lightweight base image (~80-100 MB).
+
+## Notes
+- The API runs on port `8080`.
+- Swagger UI is served at `/docs`, with raw OpenAPI JSON at `/openapi.json`.
+
+
+---
+
+### **Personalización Opcional del Swagger UI**
+Si quieres personalizar el Swagger UI (e.g., cambiar el título, agregar un logo, o deshabilitar ciertas funciones), puedes modificar el objeto `FastAPI` en `main.py`. Por ejemplo:
+
+```python
+app = FastAPI(
+    title="API Basic",
+    description="A simple API for addition and subtraction",
+    version="1.0.0",
+    docs_url="/docs",  # Ruta por defecto para Swagger UI
+    redoc_url="/redoc",  # Alternativa a Swagger UI
+    openapi_url="/openapi.json"  # Ruta para el JSON de OpenAPI
+)
 ```
-api-basic/
-├── main.cpp           # Código fuente de la API
-├── Dockerfile         # Configuración para Docker
-├── swagger.yaml       # Documentación Swagger
-├── static/            # Archivos de Swagger UI (descargados en el Dockerfile)
-│   └── index.html     # Página principal de Swagger UI (modificada)
-├── logs/              # Directorio para logs (creado en runtime)
-└── README.md          # Instrucciones del proyecto
-```
+
+- Para deshabilitar Swagger UI y usar solo ReDoc:
+  ```python
+  app = FastAPI(docs_url=None, redoc_url="/redoc")
+  ```
 
 ---
 
-### Notas
-- **Swagger UI**: El Dockerfile descarga Swagger UI y modifica `index.html` para que apunte a `/swagger.yaml` por defecto.
-- **Prueba**: Después de construir y ejecutar el contenedor (`docker build -t api-basic:latest && docker run -d -p 8080:8080 api-basic:latest`), visita `http://localhost:8080/swagger` para ver la interfaz.
-
----
-By habolanos
+### **Probar el Swagger UI**
+1. Construye y ejecuta el contenedor:
+   ```bash
+   docker build -t api-basic .
+   docker run -d -p 8080:8080 -v $(pwd)/logs:/var/log api-basic
+   ```
+2. Abre tu navegador en `http://localhost:8080/docs`.
+3. Verás una interfaz interactiva con los endpoints `/add`, `/subtract`, y `/health`. Haz clic en "Try it out" para probarlos directamente.

@@ -30,3 +30,40 @@
 *.exe
 *.out
 *.app
+
+# Python-specific files
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Logs and temporary files
+*.log
+logs/
+
+# Docker-specific files
+Dockerfile.*
+*.dockerignore
+docker-compose.override.yml
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Kubernetes local files
+*.kubeconfig
