@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: api-basic
-        image: api-basic:latest
+        image: habolanos/api-basic:latest
         ports:
         - containerPort: 8080
         volumeMounts:

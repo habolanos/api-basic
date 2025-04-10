@@ -28,8 +28,9 @@ WORKDIR /app
 COPY main.cpp .
 COPY swagger.json .
 
-# Construir la aplicación con supresión de warnings
-RUN g++ -std=c++17 -o api-basic main.cpp -lcpprest -lssl -lcrypto -lboost_system -lz -lbrotlienc -lbrotlidec -lspdlog -lpthread -Wno-deprecated-declarations
+# Construir la aplicación y verificar
+RUN g++ -std=c++17 -o api-basic main.cpp -lcpprest -lssl -lcrypto -lboost_system -lz -lbrotlienc -lbrotlidec -lspdlog -lpthread -Wno-deprecated-declarations && \
+    ls -l /app/api-basic && chmod +x /app/api-basic
 
 # Etapa final
 FROM alpine:3.18
@@ -57,5 +58,5 @@ USER appuser
 # Exponer puerto
 EXPOSE 8080
 
-# Comando para ejecutar
+# Verificar que el binario existe antes de ejecutarlo
 CMD ["/app/api-basic"]
